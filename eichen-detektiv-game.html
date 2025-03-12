@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eichen-Detektiv</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.2/browser/pixi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #gameContainer {
+            position: relative;
+            max-width: 1024px;
+            max-height: 768px;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            background-color: #fff;
+        }
+        
+        /* Fullscreen toggle button */
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #3a7d44;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="loading">Lädt Eichen-Detektiv...</div>
+        <button class="fullscreen-btn" onclick="toggleFullscreen()">Vollbild</button>
+    </div>
+
+    <script>
+        // Game variables
+        let app;
+        let currentScene = null;
+        let gameState = {
+            score: 0,
+            currentLevel: 1,
+            maxLevels: 10,
+            correctIdentifications: 0
+        };
+        
+        // Oak species data
+        const oakSpecies = {
+            "SEi": { 
+                name: "Stieleiche", 
+                latinName: "Quercus robur",
+                englishName: "Pedunculate Oak",
+                characteristics: {
+                    stalkLength: "kurz",
+                    sinusNerves: "0-2",
+                    stalkHair: "keine",
+                    midribHair: "keine",
+                    hairType: "keine"
+                },
+                description: "Die Stieleiche hat einen kurzen Blattstiel, wenige Buchtennerven (0-2) und keine Behaarung."
+            },
+            "TEi": { 
+                name: "Traubeneiche", 
+                latinName: "Quercus petraea",
+                englishName: "Sessile Oak",
+                characteristics: {
+                    stalkLength: "lang",
+                    sinusNerves: "3-6",
+                    stalkHair: "keine-schwach",
+                    midribHair: "schwach",
+                    hairType: "Sternhaare"
+                },
+                description: "Die Traubeneiche hat einen langen Blattstiel, viele Buchtennerven (3-6) und schwache Behaarung mit Sternhaaren."
+            },
+            "FEi": { 
+                name: "Flaumeiche", 
+                latinName: "Quercus pubescens",
+                englishName: "Downy Oak",
+                characteristics: {
+                    stalkLength: "lang",
+                    sinusNerves: "3-6",
+                    stalkHair: "stark",
+                    midribHair: "stark",
+                    hairType: "Büschelhaare"
+                },
+                description: "Die Flaumeiche hat einen langen Blattstiel, viele Buchtennerven (3-6) und starke Behaarung mit Büschelhaaren."
+            },
+            "TEi x FEi": { 
+                name: "Traubeneiche × Flaumeiche", 
+                latinName: "Quercus petraea × pubescens",
+                englishName: "Sessile × Downy Oak Hybrid",
+                characteristics: {
+                    stalkLength: "lang",
+                    sinusNerves: "3-6",
+                    stalkHair: "mäßig",
+                    midribHair: "mäßig",
+                    hairType: "gemischt"
+                },
+                description: "Diese Hybridform zeigt Merkmale sowohl der Trauben- als auch der Flaumeiche."
+            },
+            "UNB": { 
+                name: "Unbestimmt", 
+                latinName: "Quercus sp.",
+                englishName: "Undetermined Oak",
+                characteristics: {
+                    stalkLength: "variabel",
+                    sinusNerves: "variabel",
+                    stalkHair: "variabel",
+                    midribHair: "variabel",
+                    hairType: "variabel"
+                },
+                description: "Diese Eiche zeigt Merkmale, die nicht eindeutig einer Art zugeordnet werden können. Dies ist typisch für Hybriden."
+            }
+        };
+        
+        // Game levels - each level contains oak leaves to identify
+        // In a real implementation, you would use actual images and data
+        const gameLevels = [
+            // Level 1 - Simple examples of each species
+            [
+                { 
+                    imagePath: "SEi_leaf_1.png", // Placeholder for actual image path
+                    morphoSpecies: "SEi",
+                    geneticSpecies: "SEi",
+                    difficulty: "easy",
+                    characteristics: {
+                        stalkLength: "kurz",
+                        sinusNerves: 1,
+                        stalkHair: "keine",
+                        midribHair: "keine",
+                    }
+                },
+                { 
+                    imagePath: "TEi_leaf_1.png", 
+                    morphoSpecies: "TEi",
+                    geneticSpecies: "TEi",
+                    difficulty: "easy",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 4,
+                        stalkHair: "keine",
+                        midribHair: "schwach",
+                    }
+                },
+                { 
+                    imagePath: "FEi_leaf_1.png", 
+                    morphoSpecies: "FEi",
+                    geneticSpecies: "FEi",
+                    difficulty: "easy",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 5,
+                        stalkHair: "stark",
+                        midribHair: "stark",
+                    }
+                }
+            ],
+            
+            // Level 2 - Slightly more difficult examples
+            [
+                { 
+                    imagePath: "SEi_leaf_2.png", 
+                    morphoSpecies: "SEi",
+                    geneticSpecies: "SEi",
+                    difficulty: "medium",
+                    characteristics: {
+                        stalkLength: "kurz",
+                        sinusNerves: 2,
+                        stalkHair: "keine",
+                        midribHair: "keine",
+                    }
+                },
+                { 
+                    imagePath: "TEi_SEi_hybrid.png", 
+                    morphoSpecies: "UNB",
+                    geneticSpecies: "TEi x SEi",
+                    difficulty: "medium",
+                    characteristics: {
+                        stalkLength: "mittel",
+                        sinusNerves: 3,
+                        stalkHair: "schwach",
+                        midribHair: "schwach",
+                    }
+                }
+            ],
+            
+            // Level 3 - Introducing hybrids that look like pure species
+            [
+                { 
+                    imagePath: "TEi_FEi_hybrid_1.png", 
+                    morphoSpecies: "TEi",
+                    geneticSpecies: "TEi x FEi",
+                    difficulty: "hard",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 4,
+                        stalkHair: "schwach",
+                        midribHair: "mittel",
+                    }
+                },
+                { 
+                    imagePath: "FEi_TEi_hybrid_1.png", 
+                    morphoSpecies: "FEi",
+                    geneticSpecies: "TEi x FEi",
+                    difficulty: "hard",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 5,
+                        stalkHair: "mittel",
+                        midribHair: "stark",
+                    }
+                }
+            ]
+            // More levels would be added here for a complete game
+        ];
+        
+        // Placeholder images for development
+        const placeholderImages = {
+            oakLeaf: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cGF0aCBkPSJNMTAwLDIwYzAsMCw1MCwzMCw3MCw3MGMyMCw0MCwwLDkwLTcwLDkwYy03MCwwLTkwLTUwLTcwLTkwQzUwLDUwLDEwMCwyMCwxMDAsMjB6IiBmaWxsPSIjNWZhODRhIiBzdHJva2U9IiMzYTdkNDQiIHN0cm9rZS13aWR0aD0iMyIvPjxwYXRoIGQ9Ik0xMDAsMjBDMTAwLDIwLDUwLDUwLDMwLDkwQzEwLDEzMCwzMCwxODAsMTAwLDE4MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2E3ZDQ0IiBzdHJva2Utd2lkdGg9IjMiLz48L3N2Zz4=",
+            buttonBg: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgNTAiPjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iNTAiIHJ4PSIxMCIgcnk9IjEwIiBmaWxsPSIjM2E3ZDQ0Ii8+PC9zdmc+",
+            backgroundTexture: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNMCwwIEwxMDAsMCBMMTAwLDEwMCBMMCwxMDAiIGZpbGw9IiNlOWYxZTUiLz48cGF0aCBkPSJNMCwwIEwxMDAsMTAwIiBzdHJva2U9IiNjZWRlY2IiIHN0cm9rZS13aWR0aD0iMC41IiBzdHJva2UtZGFzaGFycmF5PSIyLDIiLz48cGF0aCBkPSJNMTAwLDAgTDAsMTAwIiBzdHJva2U9IiNjZWRlY2IiIHN0cm9rZS13aWR0aD0iMC41IiBzdHJva2UtZGFzaGFycmF5PSIyLDIiLz48L3N2Zz4=",
+            magnifyingGlass: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJNNjAsNjAgTDkwLDkwIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+"
+        };
+        
+        // Initialize the game
+        function initGame() {
+            // Remove loading text
+            const loadingText = document.querySelector('.loading');
+            if (loadingText) {
+                loadingText.remove();
+            }
+            
+            // Create the PIXI Application
+            app = new PIXI.Application({
+                width: 1024,
+                height: 768,
+                backgroundColor: 0xe9f1e5,
+                resolution: window.devicePixelRatio || 1,
+                autoDensity: true,
+                antialias: true
+            });
+            
+            // Add the view to the DOM
+            document.getElementById('gameContainer').appendChild(app.view);
+            
+            // Make the canvas responsive
+            window.addEventListener('resize', resizeGame);
+            resizeGame();
+            
+            // Load game assets
+            loadAssets();
+        }
+        
+        // Load the game assets
+        function loadAssets() {
+            // In a real implementation, you would load actual images here
+            // For now, we'll use placeholder SVG data URLs
+            app.loader
+                .add('oakLeaf', placeholderImages.oakLeaf)
+                .add('buttonBg', placeholderImages.buttonBg)
+                .add('backgroundTexture', placeholderImages.backgroundTexture)
+                .add('magnifyingGlass', placeholderImages.magnifyingGlass)
+                .load(setupGame);
+        }
+        
+        // Set up the game after assets are loaded
+        function setupGame() {
+            // Create background pattern
+            const bgTexture = app.loader.resources.backgroundTexture.texture;
+            const tilingSprite = new PIXI.TilingSprite(
+                bgTexture,
+                app.screen.width,
+                app.screen.height
+            );
+            app.stage.addChild(tilingSprite);
+            
+            // Show the start screen
+            showStartScreen();
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                tilingSprite.width = app.screen.width;
+                tilingSprite.height = app.screen.height;
+            });
+        }
+        
+        // Resize the game to fit the container
+        function resizeGame() {
+            const gameContainer = document.getElementById('gameContainer');
+            const containerWidth = gameContainer.clientWidth;
+            const containerHeight = gameContainer.clientHeight;
+            const containerRatio = containerWidth / containerHeight;
+            const gameRatio = 1024 / 768;
+            
+            if (containerRatio > gameRatio) {
+                // Container is wider than the game
+                app.renderer.resize(containerHeight * gameRatio, containerHeight);
+                app.view.style.width = `${containerHeight * gameRatio}px`;
+                app.view.style.height = `${containerHeight}px`;
+            } else {
+                // Container is taller than the game
+                app.renderer.resize(containerWidth, containerWidth / gameRatio);
+                app.view.style.width = `${containerWidth}px`;
+                app.view.style.height = `${containerWidth / gameRatio}px`;
+            }
+            
+            // Center the canvas
+            app.view.style.position = 'absolute';
+            app.view.style.left = '50%';
+            app.view.style.top = '50%';
+            app.view.style.transform = 'translate(-50%, -50%)';
+        }
+        
+        // Toggle fullscreen mode
+        function toggleFullscreen() {
+            const gameContainer = document.getElementById('gameContainer');
+            
+            if (!document.fullscreenElement) {
+                // Enter fullscreen
+                if (gameContainer.requestFullscreen) {
+                    gameContainer.requestFullscreen();
+                } else if (gameContainer.webkitRequestFullscreen) {
+                    gameContainer.webkitRequestFullscreen();
+                } else if (gameContainer.msRequestFullscreen) {
+                    gameContainer.msRequestFullscreen();
+                }
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+        
+        // Scene management
+        function clearCurrentScene() {
+            if (currentScene) {
+                app.stage.removeChild(currentScene);
+                currentScene = null;
+            }
+        }
+        
+        // Create title text
+        function createTitleText(text) {
+            const title = new PIXI.Text(text, {
+                fontFamily: 'Arial',
+                fontSize: 48,
+                fontWeight: 'bold',
+                fill: '#3a7d44',
+                align: 'center',
+                dropShadow: true,
+                dropShadowColor: '#ffffff',
+                dropShadowBlur: 4,
+                dropShadowDistance: 2
+            });
+            title.anchor.set(0.5);
+            return title;
+        }
+        
+        // Create button
+        function createButton(text, width, height) {
+            const buttonContainer = new PIXI.Container();
+            
+            // Button background
+            const buttonTexture = app.loader.resources.buttonBg.texture;
+            const buttonBg = new PIXI.Sprite(buttonTexture);
+            buttonBg.width = width;
+            buttonBg.height = height;
+            buttonBg.anchor.set(0.5);
+            
+            // Button text
+            const buttonText = new PIXI.Text(text, {
+                fontFamily: 'Arial',
+                fontSize: 24,
+                fontWeight: 'bold',
+                fill: '#ffffff',
+                align: 'center'
+            });
+            buttonText.anchor.set(0.5);
+            
+            // Add elements to container
+            buttonContainer.addChild(buttonBg);
+            buttonContainer.addChild(buttonText);
+            
+            // Interactive properties
+            buttonContainer.interactive = true;
+            buttonContainer.buttonMode = true;
+            
+            // Visual feedback on hover
+            buttonContainer.on('pointerover', () => {
+                buttonBg.tint = 0x72b074;
+                gsap.to(buttonContainer.scale, { x: 1.05, y: 1.05, duration: 0.2 });
+            });
+            
+            buttonContainer.on('pointerout', () => {
+                buttonBg.tint = 0xFFFFFF;
+                gsap.to(buttonContainer.scale, { x: 1, y: 1, duration: 0.2 });
+            });
+            
+            buttonContainer.on('pointerdown', () => {
+                buttonBg.tint = 0x5a8c5c;
+                gsap.to(buttonContainer.scale, { x: 0.95, y: 0.95, duration: 0.1 });
+            });
+            
+            buttonContainer.on('pointerup', () => {
+                buttonBg.tint = 0x72b074;
+                gsap.to(buttonContainer.scale, { x: 1.05, y: 1.05, duration: 0.1 });
+            });
+            
+            return buttonContainer;
+        }
+        
+        // Start Screen
+        function showStartScreen() {
+            clearCurrentScene();
+            
+            currentScene = new PIXI.Container();
+            app.stage.addChild(currentScene);
+            
+            // Title
+            const title = createTitleText("Eichen-Detektiv");
+            title.x = app.screen.width / 2;
+            title.y = app.screen.height * 0.2;
+            currentScene.addChild(title);
+            
+            // Subtitle
+            const subtitle = new PIXI.Text("Entdecke die Geheimnisse der Eichen", {
+                fontFamily: 'Arial',
+                fontSize: 24,
+                fontStyle: 'italic',
+                fill: '#3a7d44',
+                align: 'center'
+            });
+            subtitle.anchor.set(0.5);
+            subtitle.x = app.screen.width / 2;
+            subtitle.y = app.screen.height * 0.3;
+            currentScene.addChild(subtitle);
+            
+            // Oak leaf image
+            const oakLeaf = new PIXI.Sprite(app.loader.resources.oakLeaf.texture);
+            oakLeaf.anchor.set(0.5);
+            oakLeaf.x = app.screen.width / 2;
+            oakLeaf.y = app.screen.height * 0.5;
+            oakLeaf.scale.set(1.5);
+            currentScene.addChild(oakLeaf);
+            
+            // Animate the leaf
+            gsap.to(oakLeaf, {
+                rotation: 0.05,
+                yoyo: true,
+                repeat: -1,
+                duration: 2,
+                ease: "sine.inOut"
+            });
+            
+            // Start button
+            const startButton = createButton("Spiel starten", 200, 60);
+            startButton.x = app.screen.width / 2;
+            startButton.y = app.screen.height * 0.75;
+            startButton.on('pointerup', () => {
+                showInstructionsScreen();
+            });
+            currentScene.addChild(startButton);
+            
+            // Info button
+            const infoButton = createButton("Über Eichen", 200, 60);
+            infoButton.x = app.screen.width / 2;
+            infoButton.y = app.screen.height * 0.85;
+            infoButton.on('pointerup', () => {
+                showInfoScreen();
+            });
+            currentScene.addChild(infoButton);
+        }
+        
+        // Instructions Screen
+        function showInstructionsScreen() {
+            clearCurrentScene();
+            
+            currentScene = new PIXI.Container();
+            app.stage.addChild(currentScene);
+            
+            // Title
+            const title = createTitleText("Anleitung");
+            title.x = app.screen.width / 2;
+            title.y = app.screen.height * 0.1;
+            currentScene.addChild(title);
+            
+            // Instructions
+            const instructions = new PIXI.Text(
+                "Als Eichen-Detektiv ist es deine Aufgabe, verschiedene Eichenarten anhand ihrer Blätter zu bestimmen.\n\n" +
+                "1. Untersuche die Eichenblätter genau\n" +
+                "2. Bestimme die Merkmale (Blattstiel, Buchtennerven, Behaarung)\n" +
+                "3. Wähle die entsprechende Eichenart aus\n" +
+                "4. Vergleiche deine Bestimmung mit dem genetischen Ergebnis\n\n" +
+                "Achtung: Nicht alle Eichen lassen sich rein visuell bestimmen!",
+                {
+                    fontFamily: 'Arial',
+                    fontSize: 24,
+                    fill: '#333333',
+                    align: 'left',
+                    wordWrap: true,
+                    wordWrapWidth: app.screen.width * 0.8
+                }
+            );
+            instructions.anchor.set(0.5, 0);
+            instructions.x = app.screen.width / 2;
+            instructions.y = app.screen.height * 0.2;
+            currentScene.addChild(instructions);
+            
+            // Start game button
+            const startGameButton = createButton("Los geht's!", 200, 60);
+            startGameButton.x = app.screen.width / 2;
+            startGameButton.y = app.screen.height * 0.8;
+            startGameButton.on('pointerup', () => {
+                startGameLevel();
+            });
+            currentScene.addChild(startGameButton);
+            
+            // Back button
+            const backButton = createButton("Zurück", 150, 50);
+            backButton.x = app.screen.width * 0.2;
+            backButton.y = app.screen.height * 0.9;
+            backButton.on('pointerup', () => {
+                showStartScreen();
+            });
+            currentScene.addChild(backButton);
+        }
+        
+        // Info Screen about Oak Species
+        function showInfoScreen() {
+            clearCurrentScene();
+            
+            currentScene = new PIXI.Container();
+            app.stage.addChild(currentScene);
+            
+            // Title
+            const title = createTitleText("Die Eichenarten der Schweiz");
+            title.x = app.screen.width / 2;
+            title.y = app.screen.height * 0.1;
+            currentScene.addChild(title);
+            
+            // Species info
+            const speciesContainer = new PIXI.Container();
+            currentScene.addChild(speciesContainer);
+            
+            let yPos = 0;
+            const spacing = 170;
+            
+            // Create info cards for each species
+            for (const [code, species] of Object.entries(oakSpecies)) {
+                if (code === "UNB") continue; // Skip the undetermined type
+                
+                const card = new PIXI.Graphics();
+                card.beginFill(0xFFFFFF, 0.8);
+                card.lineStyle(2, 0x3a7d44, 1);
+                card.drawRoundedRect(0, 0, app.screen.width * 0.8, 150, 10);
+                card.endFill();
+                card.x = 0;
+                card.y = yPos;
+                speciesContainer.addChild(card);
+                
+                // Species name
+                const nameText = new PIXI.Text(`${species.name} (${species.latinName})`, {
+                    fontFamily: 'Arial',
+                    fontSize: 22,
+                    fontWeight: 'bold',
+                    fill: '#3a7d44'
+                });
+                nameText.x = 20;
+                nameText.y = yPos + 15;
+                speciesContainer.addChild(nameText);
+                
+                // Species characteristics
+                const charText = new PIXI.Text(
+                    `• Blattstiel: ${species.characteristics.stalkLength}\n` +
+                    `• Buchtennerven: ${species.characteristics.sinusNerves}\n` +
+                    `• Behaarung Blattstiel: ${species.characteristics.stalkHair}\n` +
+                    `• Behaarung Mittelnerv: ${species.characteristics.midribHair}` + 
+                    (species.characteristics.hairType !== "keine" ? `\n• Haartyp: ${species.characteristics.hairType}` : ""),
+                    {
+                        fontFamily: 'Arial',
+                        fontSize: 16,
+                        fill: '#333333'
+                    }
+                );
+                charText.x = 20;
+                charText.y = yPos + 45;
+                speciesContainer.addChild(charText);
+                
+                yPos += spacing;
+            }
+            
+            // Add hybrid info
+            const hybridCard = new PIXI.Graphics();
+            hybridCard.beginFill(0xFFFFFF, 0.8);
+            hybridCard.lineStyle(2, 0x3a7d44, 1);
+            hybridCard.drawRoundedRect(0, 0, app.screen.width * 0.8, 120, 10);
+            hybridCard.endFill();
+            hybridCard.x = 0;
+            hybridCard.y = yPos;
+            speciesContainer.addChild(hybridCard);
+            
+            const hybridTitle = new PIXI.Text("Hybriden und Zwischenformen", {
+                fontFamily: 'Arial',
+                fontSize: 22,
+                fontWeight: 'bold',
+                fill: '#3a7d44'
+            });
+            hybridTitle.x = 20;
+            hybridTitle.y = yPos + 15;
+            speciesContainer.addChild(hybridTitle);
+            
+            const hybridText = new PIXI.Text(
+                "Eichen hybridisieren häufig miteinander. Die Zwischenformen können oft nicht eindeutig\n" +
+                "bestimmt werden. Sie zeigen Merkmale beider Elternarten in unterschiedlicher Ausprägung.",
+                {
+                    fontFamily: 'Arial',
+                    fontSize: 16,
+                    fill: '#333333'
+                }
+            );
+            hybridText.x = 20;
+            hybridText.y = yPos + 45;
+            speciesContainer.addChild(hybridText);
+            
+            // Position the container
+            speciesContainer.x = app.screen.width * 0.1;
+            speciesContainer.y = app.screen.height * 0.2;
+            
+            // Add scrolling functionality
+            const mask = new PIXI.Graphics();
+            mask.beginFill(0xFFFFFF);
+            mask.drawRect(speciesContainer.x, speciesContainer.y, 
+                           app.screen.width * 0.8, app.screen.height * 0.6);
+            mask.endFill();
+            currentScene.addChild(mask);
+            speciesContainer.mask = mask;
+            
+            // Scroll interaction
+            let isDragging = false;
+            let previousY = 0;
+            const minY = app.screen.height * 0.2;
+            const maxY = Math.min(minY, minY - (speciesContainer.height - app.screen.height * 0.6));
+            
+            currentScene.interactive = true;
+            currentScene.on('pointerdown', (event) => {
+                isDragging = true;
+                previousY = event.data.global.y;
+            });
+            
+            currentScene.on('pointermove', (event) => {
+                if (isDragging) {
+                    const deltaY = event.data.global.y - previousY;
+                    speciesContainer.y += deltaY;
+                    speciesContainer.y = Math.max(maxY, Math.min(minY, speciesContainer.y));
+                    previousY = event.data.global.y;
+                }
+            });
+            
+            currentScene.on('pointerup', () => {
+                isDragging = false;
+            });
+            
+            currentScene.on('pointerupoutside', () => {
+                isDragging = false;
+            });
+            
+            // Back button
+            const backButton = createButton("Zurück", 150, 50);
+            backButton.x = app.screen.width / 2;
+            backButton.y = app.screen.height * 0.9;
+            backButton.on('pointerup', () => {
+                showStartScreen();
+            });
+            currentScene.addChild(backButton);
+        }
+        
+        // Game Level Screen
+        function startGameLevel() {
+            clearCurrentScene();
+            
+            // If all levels are completed, show the results screen
+            if (gameState.currentLevel > gameState.maxLevels) {
+                showResultsScreen();
+                return;
+            }
+            
+            // Get the current level data
+            // We're using a modulo operation to cycle through the available levels
+            // In a real implementation, you would have more levels defined
+            const levelIndex = (gameState.currentLevel - 1) % gameLevels.length;
+            const levelData = gameLevels[levelIndex];
+            
+            // Choose a random leaf from the level
+            const randomIndex = Math.floor(Math.random() * levelData.length);
+            const currentLeaf = levelData[randomIndex];
+            
+            currentScene = new PIXI.Container();
+            app.stage.addChild(currentScene);
+            
+            // Level title
+            const levelTitle = createTitleText(`Level ${gameState.currentLevel} / ${gameState.maxLevels}`);
+            levelTitle.x = app.screen.width / 2;
+            levelTitle.y = app.screen.height * 0.08;
+            levelTitle.style.fontSize = 32;
+            currentScene.addChild(levelTitle);
+            
+            // Score display
+            const scoreText = new PIXI.Text(`Punkte: ${gameState.score}`, {
+                fontFamily: 'Arial',
+                fontSize: 24,
+                fontWeight: 'bold',
+                fill: '#3a7d44',
+                align: 'right'
+            });
+            scoreText.x = app.screen.width * 0.9;
+            scoreText.y = app.screen.height * 0.08;
+            scoreText.anchor.set(1, 0.5);
+            currentScene.addChild(scoreText);
+            
+            // Leaf display
+            const leafContainer = new PIXI.Container();
+            leafContainer.x = app.screen.width / 2;
+            leafContainer.y = app.screen.height * 0.35;
+            currentScene.addChild(leafContainer);
+            
+            // Use oakLeaf texture as a placeholder
+            // In a real implementation, you would load the actual leaf image
+            const leafSprite = new PIXI.Sprite(app.loader.resources.oakLeaf.texture);
+            leafSprite.anchor.set(0.5);
+            leafSprite.scale.set(1.8);
+            leafContainer.addChild(leafSprite);
+            
+            // Magnifying glass for detailed view
+            const magnifyingGlassButton = new PIXI.Sprite(app.loader.resources.magnifyingGlass.texture);
+            magnifyingGlassButton.anchor.set(0.5);
+            magnifyingGlassButton.scale.set(0.3);
+            magnifyingGlassButton.x = leafSprite.width / 2 + 30;
+            magnifyingGlassButton.y = leafSprite.height / 2 + 30;
+            magnifyingGlassButton.interactive = true;
+            magnifyingGlassButton.buttonMode = true;
+            magnifyingGlassButton.on('pointerup', () => {
+                showDetailedView(currentLeaf);
+            });
+            leafContainer.addChild(magnifyingGlassButton);
+            
+            // Characteristic display
+            const charBox = new PIXI.Graphics();
+            charBox.beginFill(0xFFFFFF, 0.8);
+            charBox.lineStyle(2, 0x3a7d44, 1);
+            charBox.drawRoundedRect(0, 0, app.screen.width * 0.8, 120, 10);
+            charBox.endFill();
+            charBox.x = app.screen.width * 0.1;
+            charBox.y = app.screen.height * 0.57;
+            currentScene.addChild(charBox);
+            
+            // Characteristic text
+            const charTitle = new PIXI.Text("Merkmale:", {
+                fontFamily: 'Arial',
+                fontSize: 20,
+                fontWeight: 'bold',
+                fill: '#3a7d44'
+            });
+            charTitle.x = app.screen.width * 0.15;
+            charTitle.y = app.screen.height * 0.58;
+            currentScene.addChild(charTitle);
+            
+            // Display characteristics based on the leaf data
+            const charText = new PIXI.Text(
+                `• Blattstiel: ${currentLeaf.characteristics.stalkLength}\n` +
+                `• Anzahl Buchtennerven: ${currentLeaf.characteristics.sinusNerves}\n` +
+                `• Behaarung Blattstiel: ${currentLeaf.characteristics.stalkHair}\n` +
+                `• Behaarung Mittelnerv: ${currentLeaf.characteristics.midribHair}`,
+                {
+                    fontFamily: 'Arial',
+                    fontSize: 18,
+                    fill: '#333333'
+                }
+            );
+            charText.x = app.screen.width * 0.15;
+            charText.y = app.screen.height * 0.62;
+            currentScene.addChild(charText);
+            
+            // Species selection buttons
+            const buttonY = app.screen.height * 0.78;
+            const buttonSpacing = app.screen.width / 4;
+            
+            // Create buttons for each oak species
+            const speciesButtons = [];
+            
+            // SEi button
+            const seiButton = createButton("Stieleiche (SEi)", 200, 60);
+            seiButton.x = app.screen.width * 0.25;
+            seiButton.y = buttonY;
+            seiButton.on('pointerup', () => {
+                checkSelection("SEi", currentLeaf);
+            });
+            currentScene.addChild(seiButton);
+            speciesButtons.push(seiButton);
+            
+            // TEi button
+            const teiButton = createButton("Traubeneiche (TEi)", 200, 60);
+            teiButton.x = app.screen.width * 0.5;
+            teiButton.y = buttonY;
+            teiButton.on('pointerup', () => {
+                checkSelection("TEi", currentLeaf);
+            });
+            currentScene.addChild(teiButton);
+            speciesButtons.push(teiButton);
+            
+            // FEi button
+            const feiButton = createButton("Flaumeiche (FEi)", 200, 60);
+            feiButton.x = app.screen.width * 0.75;
+            feiButton.y = buttonY;
+            feiButton.on('pointerup', () => {
+                checkSelection("FEi", currentLeaf);
+            });
+            currentScene.addChild(feiButton);
+            speciesButtons.push(feiButton);
+            
+            // Unbestimmt button
+            const unbButton = createButton("Unbestimmt (UNB)", 200, 60);
+            unbButton.x = app.screen.width * 0.5;
+            unbButton.y = buttonY + 80;
+            unbButton.on('pointerup', () => {
+                checkSelection("UNB", currentLeaf);
+            });
+            currentScene.addChild(unbButton);
+            speciesButtons.push(unbButton);
+            
+            // Help button
+            const helpButton = createButton("?", 50, 50);
+            helpButton.x = app.screen.width * 0.95;
+            helpButton.y = app.screen.height * 0.95;
+            helpButton.on('pointerup', () => {
+                showInfoScreen();
+            });
+            currentScene.addChild(helpButton);
+        }
+        
+        // Detailed View of Leaf
+        function showDetailedView(leafData) {
+            // Create a modal container
+            const modalContainer = new PIXI.Container();
+            currentScene.addChild(modalContainer);
+            
+            // Darken background
+            const overlay = new PIXI.Graphics();
+            overlay.beginFill(0x000000, 0.7);
+            overlay.drawRect(0, 0, app.screen.width, app.screen.height);
+            overlay.endFill();
+            overlay.interactive = true;
+            overlay.on('pointerup', () => {
+                currentScene.removeChild(modalContainer);
+            });
+            modalContainer.addChild(overlay);
+            
+            // Modal window
+            const modal = new PIXI.Graphics();
+            modal.beginFill(0xFFFFFF, 0.95);
+            modal.lineStyle(4, 0x3a7d44, 1);
+            modal.drawRoundedRect(0, 0, app.screen.width * 0.8, app.screen.height * 0.8, 20);
+            modal.endFill();
+            modal.x = app.screen.width * 0.1;
+            modal.y = app.screen.height * 0.1;
+            modalContainer.addChild(modal);
+            
+            // Title
+            const title = new PIXI.Text("Detailansicht", {
+                fontFamily: 'Arial',
+                fontSize: 32,
+                fontWeight: 'bold',
+                fill: '#3a7d44',
+                align: 'center'
+            });
+            title.anchor.set(0.5, 0);
+            title.x = app.screen.width / 2;
+            title.y = app.screen.height * 0.15;
+            modalContainer.addChild(title);
+            
+            // Leaf image - would be larger and more detailed
+            const detailedLeaf = new PIXI.Sprite(app.loader.resources.oakLeaf.texture);
+            detailedLeaf.anchor.set(0.5);
+            detailedLeaf.scale.set(3);
+            detailedLeaf.x = app.screen.width / 2;
+            detailedLeaf.y = app.screen.height * 0.4;
+            modalContainer.addChild(detailedLeaf);
+            
+            // Close button
+            const closeButton = createButton("Schließen", 150, 50);
+            closeButton.x = app.screen.width / 2;
+            closeButton.y = app.screen.height * 0.8;
+            closeButton.on('pointerup', () => {
+                currentScene.removeChild(modalContainer);
+            });
+            modalContainer.addChild(closeButton);
+            
+            // Add annotations or additional information about specific features
+            // This would depend on the actual data and images available
+            
+            // Example annotation
+            const annotation1 = new PIXI.Graphics();
+            annotation1.lineStyle(2, 0xFF0000);
+            annotation1.moveTo(app.screen.width / 2 - 50, app.screen.height * 0.4 - 40);
+            annotation1.lineTo(app.screen.width / 2 - 100, app.screen.height * 0.25);
+            modalContainer.addChild(annotation1);
+            
+            const annotationText1 = new PIXI.Text("Buchtennerven", {
+                fontFamily: 'Arial',
+                fontSize: 16,
+                fill: '#FF0000'
+            });
+            annotationText1.anchor.set(0, 0.5);
+            annotationText1.x = app.screen.width / 2 - 100;
+            annotationText1.y = app.screen.height * 0.25 - 15;
+            modalContainer.addChild(annotationText1);
+            
+            // Example annotation 2
+            const annotation2 = new PIXI.Graphics();
+            annotation2.lineStyle(2, 0xFF0000);
+            annotation2.moveTo(app.screen.width / 2 + 20, app.screen.height * 0.4 + 80);
+            annotation2.lineTo(app.screen.width / 2 + 100, app.screen.height * 0.6);
+            modalContainer.addChild(annotation2);
+            
+            const annotationText2 = new PIXI.Text("Blattstiel", {
+                fontFamily: 'Arial',
+                fontSize: 16,
+                fill: '#FF0000'
+            });
+            annotationText2.anchor.set(0, 0.5);
+            annotationText2.x = app.screen.width / 2 + 100;
+            annotationText2.y = app.screen.height * 0.6 - 15;
+            modalContainer.addChild(annotationText2);
+        }
+        
+        // Check the selected species against the actual data
+        function checkSelection(selectedSpecies, leafData) {
+            // Calculate score
+            let pointsEarned = 0;
+            let feedbackTitle = "";
+            let feedbackText = "";
+            
+            // Compare morphological vs genetic species
+            if (selectedSpecies === leafData.morphoSpecies && selectedSpecies === leafData.geneticSpecies) {
+                // Both morpho and genetic match - perfect!
+                pointsEarned = 100;
+                feedbackTitle = "Perfekt! ✓";
+                feedbackText = `Du hast die Eiche korrekt als ${selectedSpecies} bestimmt, was mit der genetischen Analyse übereinstimmt!`;
+                gameState.correctIdentifications++;
+            } 
+            else if (selectedSpecies === leafData.morphoSpecies) {
+                // Morphologically correct but genetically different
+                pointsEarned = 50;
+                feedbackTitle = "Teilweise richtig";
+                feedbackText = `Morphologisch sieht diese Eiche wie ${selectedSpecies} aus, aber die genetische Analyse zeigt, dass es sich tatsächlich um ${leafData.geneticSpecies} handelt. Dies zeigt, wie schwierig die rein visuelle Bestimmung sein kann!`;
+            }
+            else if (selectedSpecies === leafData.geneticSpecies) {
+                // Genetically correct but morphologically different
+                pointsEarned = 75;
+                feedbackTitle = "Genetisch korrekt! ✓";
+                feedbackText = `Hervorragend! Obwohl diese Eiche morphologisch wie ${leafData.morphoSpecies} aussieht, hast du die genetische Art ${selectedSpecies} korrekt erkannt!`;
+                gameState.correctIdentifications++;
+            }
+            else if (selectedSpecies === "UNB" && leafData.geneticSpecies.includes("x")) {
+                // Correctly identified as undetermined and it is a hybrid
+                pointsEarned = 75;
+                feedbackTitle = "Gute Einschätzung! ✓";
+                feedbackText = `Du hast richtig erkannt, dass diese Eiche nicht eindeutig bestimmt werden kann. Es handelt sich tatsächlich um eine Hybridform: ${leafData.geneticSpecies}.`;
+                gameState.correctIdentifications++;
+            }
+            else {
+                // Completely wrong
+                pointsEarned = 25;
+                feedbackTitle = "Nicht korrekt";
+                feedbackText = `Diese Eiche scheint morphologisch wie ${leafData.morphoSpecies} auszusehen, ist aber genetisch ${leafData.geneticSpecies}. Du hast ${selectedSpecies} gewählt.`;
+            }
+            
+            // Add bonus points based on difficulty
+            if (leafData.difficulty === "hard" && pointsEarned > 50) {
+                pointsEarned += 25;
+                feedbackText += " Extra-Punkte für die schwierige Bestimmung!";
+            }
+            
+            // Update the score
+            gameState.score += pointsEarned;
+            
+            // Show feedback
+            showFeedbackScreen(feedbackTitle, feedbackText, pointsEarned, leafData);
+        }
+        
+        // Feedback Screen
+        function showFeedbackScreen(title, text, points, leafData) {
+            // Create a modal container
+            const feedbackContainer = new PIXI.Container();
+            currentScene.addChild(feedbackContainer);
+            
+            // Darken background
+            const overlay = new PIXI.Graphics();
+            overlay.beginFill(0x000000, 0.7);
+            overlay.drawRect(0, 0, app.screen.width, app.screen.height);
+            overlay.endFill();
+            feedbackContainer.addChild(overlay);
+            
+            // Feedback window
+            const feedbackBox = new PIXI.Graphics();
+            feedbackBox.beginFill(0xFFFFFF, 0.95);
+            feedbackBox.lineStyle(4, 0x3a7d44, 1);
+            feedbackBox.drawRoundedRect(0, 0, app.screen.width * 0.8, app.screen.height * 0.7, 20);
+            feedbackBox.endFill();
+            feedbackBox.x = app.screen.width * 0.1;
+            feedbackBox.y = app.screen.height * 0.15;
+            feedbackContainer.addChild(feedbackBox);
+            
+            // Title
+            const feedbackTitle = new PIXI.Text(title, {
+                fontFamily: 'Arial',
+                fontSize: 36,
+                fontWeight: 'bold',
+                fill: title.includes("✓") ? '#3a7d44' : '#aa5555',
+                align: 'center'
+            });
+            feedbackTitle.anchor.set(0.5, 0);
+            feedbackTitle.x = app.screen.width / 2;
+            feedbackTitle.y = app.screen.height * 0.2;
+            feedbackContainer.addChild(feedbackTitle);
+            
+            // Points
+            const pointsText = new PIXI.Text(`+${points} Punkte`, {
+                fontFamily: 'Arial',
+                fontSize: 28,
+                fontWeight: 'bold',
+                fill: '#3a7d44',
+                align: 'center'
+            });
+            pointsText.anchor.set(0.5, 0);
+            pointsText.x = app.screen.width / 2;
+            pointsText.y = app.screen.height * 0.27;
+            feedbackContainer.addChild(pointsText);
+            
+            // Feedback text
+            const feedbackText = new PIXI.Text(text, {
+                fontFamily: 'Arial',
+                fontSize: 20,
+                fill: '#333333',
+                align: 'center',
+                wordWrap: true,
+                wordWrapWidth: app.screen.width * 0.7
+            });
+            feedbackText.anchor.set(0.5, 0);
+            feedbackText.x = app.screen.width / 2;
+            feedbackText.y = app.screen.height * 0.35;
+            feedbackContainer.addChild(feedbackText);
+            
+            // Genetic info
+            const geneticTitle = new PIXI.Text("Genetische Analyse:", {
+                fontFamily: 'Arial',
+                fontSize: 20,
+                fontWeight: 'bold',
+                fill: '#3a7d44',
+                align: 'center'
+            });
+            geneticTitle.anchor.set(0.5, 0);
+            geneticTitle.x = app.screen.width / 2;
+            geneticTitle.y = app.screen.height * 0.5;
+            feedbackContainer.addChild(geneticTitle);
+            
+            // DNA visualization (simplified)
+            const dnaVisualization = new PIXI.Graphics();
+            dnaVisualization.lineStyle(4, 0x3a7d44);
+            
+            // Draw a stylized DNA double helix
+            const dnaX = app.screen.width / 2;
+            const dnaY = app.screen.height * 0.6;
+            const dnaWidth = 200;
+            const dnaHeight = 60;
+            
+            for (let i = 0; i < 6; i++) {
+                const x1 = dnaX - dnaWidth/2 + (i * dnaWidth/5);
+                const x2 = dnaX - dnaWidth/2 + ((i+1) * dnaWidth/5);
+                
+                // Top curve
+                dnaVisualization.moveTo(x1, dnaY - dnaHeight/2 * (i % 2 ? 0.5 : 1));
+                dnaVisualization.lineTo(x2, dnaY - dnaHeight/2 * (i % 2 ? 1 : 0.5));
+                
+                // Bottom curve
+                dnaVisualization.moveTo(x1, dnaY + dnaHeight/2 * (i % 2 ? 0.5 : 1));
+                dnaVisualization.lineTo(x2, dnaY + dnaHeight/2 * (i % 2 ? 1 : 0.5));
+                
+                // Connecting lines
+                if (i < 5) {
+                    dnaVisualization.moveTo(x2, dnaY - dnaHeight/2 * (i % 2 ? 1 : 0.5));
+                    dnaVisualization.lineTo(x2, dnaY + dnaHeight/2 * (i % 2 ? 1 : 0.5));
+                }
+            }
+            
+            feedbackContainer.addChild(dnaVisualization);
+            
+            // Genetic result text
+            const geneticText = new PIXI.Text(`Genetisch bestimmte Art: ${leafData.geneticSpecies}`, {
+                fontFamily: 'Arial',
+                fontSize: 22,
+                fontWeight: 'bold',
+                fill: '#3a7d44',
+                align: 'center'
+            });
+            geneticText.anchor.set(0.5, 0);
+            geneticText.x = app.screen.width / 2;
+            geneticText.y = app.screen.height * 0.67;
+            feedbackContainer.addChild(geneticText);
+            
+            // Continue button
+            const continueButton = createButton("Weiter", 200, 60);
+            continueButton.x = app.screen.width / 2;
+            continueButton.y = app.screen.height * 0.78;
+            continueButton.on('pointerup', () => {
+                gameState.currentLevel++;
+                startGameLevel();
+            });
+            feedbackContainer.addChild(continueButton);
+        }
+        
+        // Results Screen
+        function showResultsScreen() {
+            clearCurrentScene();
+            
+            currentScene = new PIXI.Container();
+            app.stage.addChild(currentScene);
+            
+            // Title
+            const title = createTitleText("Spielergebnis");
+            title.x = app.screen.width / 2;
+            title.y = app.screen.height * 0.15;
+            currentScene.addChild(title);
+            
+            // Score
+            const scoreText = new PIXI.Text(`Gesamtpunktzahl: ${gameState.score}`, {
+                fontFamily: 'Arial',
+                fontSize: 32,
+                fontWeight: 'bold',
+                fill: '#3a7d44',
+                align: 'center'
+            });
+            scoreText.anchor.set(0.5);
+            scoreText.x = app.screen.width / 2;
+            scoreText.y = app.screen.height * 0.25;
+            currentScene.addChild(scoreText);
+            
+            // Correct identifications
+            const correctText = new PIXI.Text(`Korrekte Bestimmungen: ${gameState.correctIdentifications} von ${gameState.maxLevels}`, {
+                fontFamily: 'Arial',
+                fontSize: 24,
+                fill: '#333333',
+                align: 'center'
+            });
+            correctText.anchor.set(0.5);
+            correctText.x = app.screen.width / 2;
+            correctText.y = app.screen.height * 0.33;
+            currentScene.addChild(correctText);
+            
+            // Success rate
+            const successRate = Math.round((gameState.correctIdentifications / gameState.maxLevels) * 100);
+            const successText = new PIXI.Text(`Erfolgsrate: ${successRate}%`, {
+                fontFamily: 'Arial',
+                fontSize: 24,
+                fill: '#333333',
+                align: 'center'
+            });
+            successText.anchor.set(0.5);
+            successText.x = app.screen.width / 2;
+            successText.y = app.screen.height * 0.39;
+            currentScene.addChild(successText);
+            
+            // Conclusion box
+            const conclusionBox = new PIXI.Graphics();
+            conclusionBox.beginFill(0xFFFFFF, 0.8);
+            conclusionBox.lineStyle(2, 0x3a7d44, 1);
+            conclusionBox.drawRoundedRect(0, 0, app.screen.width * 0.8, 150, 10);
+            conclusionBox.endFill();
+            conclusionBox.x = app.screen.width * 0.1;
+            conclusionBox.y = app.screen.height * 0.48;
+            currentScene.addChild(conclusionBox);
+            
+            // Conclusion text
+            const conclusion = new PIXI.Text(
+                "Fazit: Die morphologische Bestimmung von Eichenarten kann schwierig sein, besonders bei Hybriden. " +
+                "Genetische Analysen bieten eine zuverlässigere Methode zur eindeutigen Bestimmung und zeigen " +
+                "die große Vielfalt und Komplexität der Eichenhybridisierung in der Natur.",
+                {
+                    fontFamily: 'Arial',
+                    fontSize: 20,
+                    fill: '#333333',
+                    align: 'center',
+                    wordWrap: true,
+                    wordWrapWidth: app.screen.width * 0.75
+                }
+            );
+            conclusion.anchor.set(0.5, 0);
+            conclusion.x = app.screen.width / 2;
+            conclusion.y = app.screen.height * 0.5;
+            currentScene.addChild(conclusion);
+            
+            // Play again button
+            const playAgainButton = createButton("Nochmal spielen", 220, 60);
+            playAgainButton.x = app.screen.width / 2;
+            playAgainButton.y = app.screen.height * 0.7;
+            playAgainButton.on('pointerup', () => {
+                // Reset game state
+                gameState.score = 0;
+                gameState.currentLevel = 1;
+                gameState.correctIdentifications = 0;
+                startGameLevel();
+            });
+            currentScene.addChild(playAgainButton);
+            
+            // Home button
+            const homeButton = createButton("Zur Startseite", 220, 60);
+            homeButton.x = app.screen.width / 2;
+            homeButton.y = app.screen.height * 0.8;
+            homeButton.on('pointerup', () => {
+                // Reset game state
+                gameState.score = 0;
+                gameState.currentLevel = 1;
+                gameState.correctIdentifications = 0;
+                showStartScreen();
+            });
+            currentScene.addChild(homeButton);
+        }
+        
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
