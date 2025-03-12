@@ -58,9 +58,103 @@
             font-size: 24px;
             color: #3a7d44;
         }
+        
+        /* Installation instructions modal */
+        #installationModal {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .close-modal {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .setup-instructions {
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+        
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+        
+        .setup-instructions li {
+            margin-bottom: 10px;
+        }
+        
+        .btn-start {
+            background: #3a7d44;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        .btn-start:hover {
+            background: #2c5f33;
+        }
     </style>
 </head>
 <body>
+    <!-- Installation Instructions Modal -->
+    <div id="installationModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="document.getElementById('installationModal').style.display='none'">&times;</span>
+            <h2>Eichen-Detektiv: Bildeinrichtung</h2>
+            <div class="setup-instructions">
+                <p>Um das Spiel mit den echten Eichenblatt-Bildern zu nutzen, folge bitte diesen Schritten:</p>
+                <ol>
+                    <li>Erstelle einen Ordner namens <strong>images</strong> im gleichen Verzeichnis wie diese HTML-Datei.</li>
+                    <li>Kopiere alle Eichenblatt-Bilder in diesen Ordner. Die Bildnamen müssen exakt mit den Namen im Spiel übereinstimmen (z.B. <code>M3_111_13.jpg</code>).</li>
+                    <li>Die Dateistruktur sollte folgendermaßen aussehen:</li>
+                </ol>
+                <div class="code-block">
+eichen-detektiv-game.html
+/images/
+  ├── M1_M2_111_13.jpg
+  ├── M1_M2_112_05.jpg
+  ├── M1_M2_122_12.jpg
+  ├── ... (alle weiteren Bilder)
+  ├── M3_111_13.jpg
+  ├── ... (alle Stieleiche Bilder)
+  ├── M4_111_13.jpg
+  └── ... (alle weiteren Bilder)
+                </div>
+                <p>Wenn die Bilder richtig platziert sind, werden sie automatisch geladen, wenn du das Spiel startest.</p>
+                <button class="btn-start" onclick="document.getElementById('installationModal').style.display='none'">Verstanden und fortfahren</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="gameContainer">
         <div class="loading">Lädt Eichen-Detektiv...</div>
         <button class="fullscreen-btn" onclick="toggleFullscreen()">Vollbild</button>
@@ -146,13 +240,48 @@
             }
         };
         
-        // Game levels - each level contains oak leaves to identify
-        // In a real implementation, you would use actual images and data
+        // Game levels using real oak leaf images
+        // These are structured based on the provided image filenames
+        // M3 = Stieleiche (SEi), M4 = Traubeneiche (TEi), M5 = Flaumeiche (FEi), M1_M2 = Hybrids
+        
+        // Parse image filenames and create data structure
+        const oakImageData = {
+            // Hybrids (M1_M2)
+            hybridImages: [
+                "M1_M2_111_13.jpg", "M1_M2_112_05.jpg", "M1_M2_122_12.jpg", 
+                "M1_M2_202_15.jpg", "M1_M2_319_13.jpg", "M1_M2_514_10.jpg", 
+                "M1_M2_514_18.jpg", "M1_M2_521_16.jpg", "M1_M2_601_03.jpg", 
+                "M1_M2_609_17.jpg", "M1_M2_610_10.jpg"
+            ],
+            // Stieleiche (M3)
+            stieleicheImages: [
+                "M3_111_13.jpg", "M3_112_05.jpg", "M3_122_12.jpg", 
+                "M3_125_17.jpg", "M3_202_15.jpg", "M3_319_13.jpg", 
+                "M3_512_18.jpg", "M3_514_10.jpg", "M3_521_16.jpg", 
+                "M3_601_03.jpg", "M3_609_17.jpg", "M3_610_10.jpg"
+            ],
+            // Traubeneiche (M4)
+            traubeneicheImages: [
+                "M4_111_13.jpg", "M4_112_05.jpg", "M4_122_12.jpg", 
+                "M4_125_17.jpg", "M4_202_15.jpg", "M4_319_13.jpg", 
+                "M4_512_18.jpg", "M4_514_10.jpg", "M4_521_16.jpg", 
+                "M4_601_03.jpg", "M4_609_17.jpg", "M4_610_10.jpg"
+            ],
+            // Flaumeiche (M5)
+            flaumeicheImages: [
+                "M5_112_05.jpg", "M5_122_12.jpg", "M5_125_17.jpg", 
+                "M5_202_15.jpg", "M5_319_13.jpg", "M5_512_18.jpg", 
+                "M5_514_10.jpg", "M5_521_16.jpg", "M5_601_03.jpg", 
+                "M5_609_17.jpg", "M5_610_10.jpg"
+            ]
+        };
+        
+        // Create game levels with increasing difficulty
         const gameLevels = [
-            // Level 1 - Simple examples of each species
+            // Level 1 - Clear examples of each species (easy to identify)
             [
                 { 
-                    imagePath: "SEi_leaf_1.png", // Placeholder for actual image path
+                    imagePath: oakImageData.stieleicheImages[0],
                     morphoSpecies: "SEi",
                     geneticSpecies: "SEi",
                     difficulty: "easy",
@@ -164,7 +293,7 @@
                     }
                 },
                 { 
-                    imagePath: "TEi_leaf_1.png", 
+                    imagePath: oakImageData.traubeneicheImages[0],
                     morphoSpecies: "TEi",
                     geneticSpecies: "TEi",
                     difficulty: "easy",
@@ -176,7 +305,7 @@
                     }
                 },
                 { 
-                    imagePath: "FEi_leaf_1.png", 
+                    imagePath: oakImageData.flaumeicheImages[0],
                     morphoSpecies: "FEi",
                     geneticSpecies: "FEi",
                     difficulty: "easy",
@@ -189,10 +318,10 @@
                 }
             ],
             
-            // Level 2 - Slightly more difficult examples
+            // Level 2 - More varied specimens of pure species (medium difficulty)
             [
                 { 
-                    imagePath: "SEi_leaf_2.png", 
+                    imagePath: oakImageData.stieleicheImages[3],
                     morphoSpecies: "SEi",
                     geneticSpecies: "SEi",
                     difficulty: "medium",
@@ -204,7 +333,35 @@
                     }
                 },
                 { 
-                    imagePath: "TEi_SEi_hybrid.png", 
+                    imagePath: oakImageData.traubeneicheImages[5],
+                    morphoSpecies: "TEi",
+                    geneticSpecies: "TEi",
+                    difficulty: "medium",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 4,
+                        stalkHair: "schwach",
+                        midribHair: "schwach",
+                    }
+                },
+                { 
+                    imagePath: oakImageData.flaumeicheImages[4],
+                    morphoSpecies: "FEi",
+                    geneticSpecies: "FEi",
+                    difficulty: "medium",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 5,
+                        stalkHair: "mittel",
+                        midribHair: "stark",
+                    }
+                }
+            ],
+            
+            // Level 3 - Simple hybrids (medium-high difficulty)
+            [
+                { 
+                    imagePath: oakImageData.hybridImages[0],
                     morphoSpecies: "UNB",
                     geneticSpecies: "TEi x SEi",
                     difficulty: "medium",
@@ -214,13 +371,25 @@
                         stalkHair: "schwach",
                         midribHair: "schwach",
                     }
+                },
+                { 
+                    imagePath: oakImageData.hybridImages[2],
+                    morphoSpecies: "UNB",
+                    geneticSpecies: "TEi x FEi",
+                    difficulty: "medium",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 4,
+                        stalkHair: "mittel",
+                        midribHair: "mittel",
+                    }
                 }
             ],
             
-            // Level 3 - Introducing hybrids that look like pure species
+            // Level 4 - Deceptive hybrids that look like pure species (high difficulty)
             [
                 { 
-                    imagePath: "TEi_FEi_hybrid_1.png", 
+                    imagePath: oakImageData.hybridImages[4],
                     morphoSpecies: "TEi",
                     geneticSpecies: "TEi x FEi",
                     difficulty: "hard",
@@ -232,7 +401,7 @@
                     }
                 },
                 { 
-                    imagePath: "FEi_TEi_hybrid_1.png", 
+                    imagePath: oakImageData.hybridImages[6],
                     morphoSpecies: "FEi",
                     geneticSpecies: "TEi x FEi",
                     difficulty: "hard",
@@ -243,8 +412,35 @@
                         midribHair: "stark",
                     }
                 }
+            ],
+            
+            // Level 5 - Advanced cases - challenge round
+            [
+                { 
+                    imagePath: oakImageData.hybridImages[8],
+                    morphoSpecies: "SEi",
+                    geneticSpecies: "TEi x SEi",
+                    difficulty: "expert",
+                    characteristics: {
+                        stalkLength: "kurz",
+                        sinusNerves: 3,
+                        stalkHair: "keine",
+                        midribHair: "schwach",
+                    }
+                },
+                { 
+                    imagePath: oakImageData.stieleicheImages[9],
+                    morphoSpecies: "UNB",
+                    geneticSpecies: "SEi",
+                    difficulty: "expert",
+                    characteristics: {
+                        stalkLength: "mittel",
+                        sinusNerves: 2,
+                        stalkHair: "keine",
+                        midribHair: "keine",
+                    }
+                }
             ]
-            // More levels would be added here for a complete game
         ];
         
         // Placeholder images for development
@@ -286,18 +482,55 @@
         
         // Load the game assets
         function loadAssets() {
-            // In a real implementation, you would load actual images here
-            // For now, we'll use placeholder SVG data URLs
+            // Add base assets
             app.loader
-                .add('oakLeaf', placeholderImages.oakLeaf)
                 .add('buttonBg', placeholderImages.buttonBg)
                 .add('backgroundTexture', placeholderImages.backgroundTexture)
-                .add('magnifyingGlass', placeholderImages.magnifyingGlass)
-                .load(setupGame);
+                .add('magnifyingGlass', placeholderImages.magnifyingGlass);
+                
+            // Fallback oak leaf for emergency use
+            app.loader.add('oakLeaf', placeholderImages.oakLeaf);
+            
+            // IMPORTANT: Load all actual oak leaf images from the images folder
+            
+            // Load hybrid oak images
+            oakImageData.hybridImages.forEach(imagePath => {
+                app.loader.add(imagePath, 'images/' + imagePath);
+            });
+            
+            // Load Stieleiche images
+            oakImageData.stieleicheImages.forEach(imagePath => {
+                app.loader.add(imagePath, 'images/' + imagePath);
+            });
+            
+            // Load Traubeneiche images
+            oakImageData.traubeneicheImages.forEach(imagePath => {
+                app.loader.add(imagePath, 'images/' + imagePath);
+            });
+            
+            // Load Flaumeiche images
+            oakImageData.flaumeicheImages.forEach(imagePath => {
+                app.loader.add(imagePath, 'images/' + imagePath);
+            });
+            
+            // Add error handling for missing images
+            app.loader.onError.add((error, loader, resource) => {
+                console.error("Error loading resource:", error);
+                console.log("Failed to load:", resource.url);
+                // Continue loading other resources even if one fails
+            });
+            
+            // Start the game when all assets are loaded
+            app.loader.load(setupGame);
         }
         
         // Set up the game after assets are loaded
         function setupGame() {
+            console.log("Assets loaded, game starting...");
+            
+            // Log loaded resources for debugging
+            console.log("Successfully loaded resources:", Object.keys(app.loader.resources));
+            
             // Create background pattern
             const bgTexture = app.loader.resources.backgroundTexture.texture;
             const tilingSprite = new PIXI.TilingSprite(
@@ -306,6 +539,26 @@
                 app.screen.height
             );
             app.stage.addChild(tilingSprite);
+            
+            // Add info about image requirements
+            if (Object.keys(app.loader.resources).length < 20) {
+                const infoText = new PIXI.Text(
+                    "Einige Bildressourcen wurden nicht geladen. Stelle sicher, dass alle Bilddateien\n" +
+                    "im Ordner 'images/' verfügbar sind und den richtigen Dateinamen haben.",
+                    {
+                        fontFamily: 'Arial',
+                        fontSize: 14,
+                        fill: '#aa5555',
+                        align: 'center',
+                        wordWrap: true,
+                        wordWrapWidth: app.screen.width * 0.8
+                    }
+                );
+                infoText.anchor.set(0.5);
+                infoText.x = app.screen.width / 2;
+                infoText.y = app.screen.height * 0.05;
+                app.stage.addChild(infoText);
+            }
             
             // Show the start screen
             showStartScreen();
@@ -761,12 +1014,47 @@
             leafContainer.y = app.screen.height * 0.35;
             currentScene.addChild(leafContainer);
             
-            // Use oakLeaf texture as a placeholder
-            // In a real implementation, you would load the actual leaf image
-            const leafSprite = new PIXI.Sprite(app.loader.resources.oakLeaf.texture);
+            // Load the appropriate leaf image for this level
+            // Use the imagePath property from the currentLeaf object
+            const leafSprite = new PIXI.Sprite(
+                app.loader.resources[currentLeaf.imagePath] 
+                ? app.loader.resources[currentLeaf.imagePath].texture 
+                : app.loader.resources.oakLeaf.texture // Fallback if image not found
+            );
             leafSprite.anchor.set(0.5);
-            leafSprite.scale.set(1.8);
+            
+            // Handle image sizing - scale to fit within a reasonable display area
+            const maxWidth = app.screen.width * 0.4;
+            const maxHeight = app.screen.height * 0.4;
+            
+            // Responsively scale the image to fit within boundaries while maintaining aspect ratio
+            if (leafSprite.width > leafSprite.height) {
+                // Landscape orientation
+                if (leafSprite.width > maxWidth) {
+                    const scale = maxWidth / leafSprite.width;
+                    leafSprite.scale.set(scale);
+                }
+            } else {
+                // Portrait orientation
+                if (leafSprite.height > maxHeight) {
+                    const scale = maxHeight / leafSprite.height;
+                    leafSprite.scale.set(scale);
+                }
+            }
+            
+            // Add image reference for educational purposes
+            const imageRefText = new PIXI.Text(currentLeaf.imagePath, {
+                fontFamily: 'Arial',
+                fontSize: 12,
+                fill: '#666666',
+                align: 'center'
+            });
+            imageRefText.anchor.set(0.5, 0);
+            imageRefText.x = 0;
+            imageRefText.y = leafSprite.height * leafSprite.scale.y / 2 + 10;
+            
             leafContainer.addChild(leafSprite);
+            leafContainer.addChild(imageRefText);
             
             // Magnifying glass for detailed view
             const magnifyingGlassButton = new PIXI.Sprite(app.loader.resources.magnifyingGlass.texture);
@@ -915,13 +1203,49 @@
             title.y = app.screen.height * 0.15;
             modalContainer.addChild(title);
             
-            // Leaf image - would be larger and more detailed
-            const detailedLeaf = new PIXI.Sprite(app.loader.resources.oakLeaf.texture);
+            // Display detailed leaf image with the appropriate texture
+            const detailedLeaf = new PIXI.Sprite(
+                app.loader.resources[leafData.imagePath] 
+                ? app.loader.resources[leafData.imagePath].texture 
+                : app.loader.resources.oakLeaf.texture // Fallback
+            );
             detailedLeaf.anchor.set(0.5);
-            detailedLeaf.scale.set(3);
+            
+            // Responsively scale the detailed view image
+            const detailMaxWidth = app.screen.width * 0.6;
+            const detailMaxHeight = app.screen.height * 0.4;
+            
+            // Calculate appropriate scale to fit within the modal
+            if (detailedLeaf.width > detailedLeaf.height) {
+                // Landscape orientation
+                if (detailedLeaf.width > detailMaxWidth) {
+                    const scale = detailMaxWidth / detailedLeaf.width;
+                    detailedLeaf.scale.set(scale);
+                }
+            } else {
+                // Portrait orientation
+                if (detailedLeaf.height > detailMaxHeight) {
+                    const scale = detailMaxHeight / detailedLeaf.height;
+                    detailedLeaf.scale.set(scale);
+                }
+            }
+            
             detailedLeaf.x = app.screen.width / 2;
             detailedLeaf.y = app.screen.height * 0.4;
             modalContainer.addChild(detailedLeaf);
+            
+            // Add sample ID information
+            const sampleInfo = leafData.imagePath.replace('.jpg', '');
+            const sampleInfoText = new PIXI.Text(`Probe: ${sampleInfo}`, {
+                fontFamily: 'Arial',
+                fontSize: 14,
+                fill: '#666666',
+                align: 'center'
+            });
+            sampleInfoText.anchor.set(0.5, 0);
+            sampleInfoText.x = app.screen.width / 2;
+            sampleInfoText.y = app.screen.height * 0.4 + (detailedLeaf.height * detailedLeaf.scale.y / 2) + 15;
+            modalContainer.addChild(sampleInfoText);
             
             // Close button
             const closeButton = createButton("Schließen", 150, 50);
@@ -932,42 +1256,94 @@
             });
             modalContainer.addChild(closeButton);
             
-            // Add annotations or additional information about specific features
-            // This would depend on the actual data and images available
+            // Add annotations specific to this oak leaf based on its characteristics
+            // Create feature highlight container
+            const featureContainer = new PIXI.Container();
+            modalContainer.addChild(featureContainer);
             
-            // Example annotation
+            // Get leaf dimensions for positioning annotations
+            const leafWidth = detailedLeaf.width * detailedLeaf.scale.x;
+            const leafHeight = detailedLeaf.height * detailedLeaf.scale.y;
+            
+            // Position of annotations relative to the leaf dimensions
+            // This provides more flexibility to handle various leaf sizes and orientations
+            
+            // Annotation for Buchtennerven (sinus nerves)
             const annotation1 = new PIXI.Graphics();
             annotation1.lineStyle(2, 0xFF0000);
-            annotation1.moveTo(app.screen.width / 2 - 50, app.screen.height * 0.4 - 40);
-            annotation1.lineTo(app.screen.width / 2 - 100, app.screen.height * 0.25);
-            modalContainer.addChild(annotation1);
+            annotation1.moveTo(app.screen.width / 2 - leafWidth * 0.25, app.screen.height * 0.4 - leafHeight * 0.2);
+            annotation1.lineTo(app.screen.width / 2 - leafWidth * 0.5, app.screen.height * 0.4 - leafHeight * 0.35);
+            featureContainer.addChild(annotation1);
             
-            const annotationText1 = new PIXI.Text("Buchtennerven", {
+            const annotationText1 = new PIXI.Text(`Buchtennerven: ${leafData.characteristics.sinusNerves}`, {
                 fontFamily: 'Arial',
                 fontSize: 16,
                 fill: '#FF0000'
             });
             annotationText1.anchor.set(0, 0.5);
-            annotationText1.x = app.screen.width / 2 - 100;
-            annotationText1.y = app.screen.height * 0.25 - 15;
-            modalContainer.addChild(annotationText1);
+            annotationText1.x = app.screen.width / 2 - leafWidth * 0.5;
+            annotationText1.y = app.screen.height * 0.4 - leafHeight * 0.35 - 15;
+            featureContainer.addChild(annotationText1);
             
-            // Example annotation 2
+            // Annotation for Blattstiel (leaf stalk)
             const annotation2 = new PIXI.Graphics();
             annotation2.lineStyle(2, 0xFF0000);
-            annotation2.moveTo(app.screen.width / 2 + 20, app.screen.height * 0.4 + 80);
-            annotation2.lineTo(app.screen.width / 2 + 100, app.screen.height * 0.6);
-            modalContainer.addChild(annotation2);
+            annotation2.moveTo(app.screen.width / 2 + leafWidth * 0.1, app.screen.height * 0.4 + leafHeight * 0.3);
+            annotation2.lineTo(app.screen.width / 2 + leafWidth * 0.5, app.screen.height * 0.4 + leafHeight * 0.4);
+            featureContainer.addChild(annotation2);
             
-            const annotationText2 = new PIXI.Text("Blattstiel", {
+            const annotationText2 = new PIXI.Text(`Blattstiel: ${leafData.characteristics.stalkLength}`, {
                 fontFamily: 'Arial',
                 fontSize: 16,
                 fill: '#FF0000'
             });
             annotationText2.anchor.set(0, 0.5);
-            annotationText2.x = app.screen.width / 2 + 100;
-            annotationText2.y = app.screen.height * 0.6 - 15;
-            modalContainer.addChild(annotationText2);
+            annotationText2.x = app.screen.width / 2 + leafWidth * 0.5;
+            annotationText2.y = app.screen.height * 0.4 + leafHeight * 0.4 - 15;
+            featureContainer.addChild(annotationText2);
+            
+            // Annotation for Behaarung (hairiness)
+            const annotation3 = new PIXI.Graphics();
+            annotation3.lineStyle(2, 0xFF0000);
+            annotation3.moveTo(app.screen.width / 2 - leafWidth * 0.1, app.screen.height * 0.4 + leafHeight * 0.15);
+            annotation3.lineTo(app.screen.width / 2 - leafWidth * 0.5, app.screen.height * 0.4 + leafHeight * 0.3);
+            featureContainer.addChild(annotation3);
+            
+            const annotationText3 = new PIXI.Text(`Behaarung: ${leafData.characteristics.midribHair}`, {
+                fontFamily: 'Arial',
+                fontSize: 16,
+                fill: '#FF0000'
+            });
+            annotationText3.anchor.set(1, 0.5);
+            annotationText3.x = app.screen.width / 2 - leafWidth * 0.5 - 10;
+            annotationText3.y = app.screen.height * 0.4 + leafHeight * 0.3;
+            featureContainer.addChild(annotationText3);
+            
+            // Image code info
+            const codeInfo = leafData.imagePath.split('_');
+            let speciesCode = "";
+            
+            if (codeInfo[0] === "M1" && codeInfo[1] === "M2") {
+                speciesCode = "M1_M2 = Hybrid";
+            } else if (codeInfo[0] === "M3") {
+                speciesCode = "M3 = Stieleiche (SEi)";
+            } else if (codeInfo[0] === "M4") {
+                speciesCode = "M4 = Traubeneiche (TEi)";
+            } else if (codeInfo[0] === "M5") {
+                speciesCode = "M5 = Flaumeiche (FEi)";
+            }
+            
+            const codeInfoText = new PIXI.Text(speciesCode, {
+                fontFamily: 'Arial',
+                fontSize: 14,
+                fontStyle: 'italic',
+                fill: '#3a7d44',
+                align: 'center'
+            });
+            codeInfoText.anchor.set(0.5, 0);
+            codeInfoText.x = app.screen.width / 2;
+            codeInfoText.y = sampleInfoText.y + sampleInfoText.height + 10;
+            modalContainer.addChild(codeInfoText);
         }
         
         // Check the selected species against the actual data
@@ -1073,6 +1449,19 @@
             pointsText.x = app.screen.width / 2;
             pointsText.y = app.screen.height * 0.27;
             feedbackContainer.addChild(pointsText);
+            
+            // Add sample reference
+            const sampleRef = new PIXI.Text(`Probe: ${leafData.imagePath}`, {
+                fontFamily: 'Arial',
+                fontSize: 14,
+                fontStyle: 'italic',
+                fill: '#666666',
+                align: 'center'
+            });
+            sampleRef.anchor.set(0.5, 0);
+            sampleRef.x = app.screen.width / 2;
+            sampleRef.y = app.screen.height * 0.32;
+            feedbackContainer.addChild(sampleRef);
             
             // Feedback text
             const feedbackText = new PIXI.Text(text, {
