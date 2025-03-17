@@ -315,6 +315,18 @@ eichen-detektiv-game.html
                         stalkHair: "stark",
                         midribHair: "stark",
                     }
+                },
+                { 
+                    imagePath: oakImageData.hybridImages[0],
+                    morphoSpecies: "UNB",
+                    geneticSpecies: "TEi x SEi",
+                    difficulty: "medium",
+                    characteristics: {
+                        stalkLength: "mittel",
+                        sinusNerves: 3,
+                        stalkHair: "schwach",
+                        midribHair: "schwach",
+                    }
                 }
             ],
             
@@ -355,6 +367,18 @@ eichen-detektiv-game.html
                         stalkHair: "mittel",
                         midribHair: "stark",
                     }
+                },
+                { 
+                    imagePath: oakImageData.hybridImages[2],
+                    morphoSpecies: "UNB",
+                    geneticSpecies: "TEi x FEi",
+                    difficulty: "medium",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 4,
+                        stalkHair: "mittel",
+                        midribHair: "mittel",
+                    }
                 }
             ],
             
@@ -382,6 +406,18 @@ eichen-detektiv-game.html
                         sinusNerves: 4,
                         stalkHair: "mittel",
                         midribHair: "mittel",
+                    }
+                },
+                { 
+                    imagePath: oakImageData.hybridImages[5],
+                    morphoSpecies: "UNB",
+                    geneticSpecies: "TEi x FEi",
+                    difficulty: "medium",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 5,
+                        stalkHair: "mittel",
+                        midribHair: "stark",
                     }
                 }
             ],
@@ -411,6 +447,18 @@ eichen-detektiv-game.html
                         stalkHair: "mittel",
                         midribHair: "stark",
                     }
+                },
+                { 
+                    imagePath: oakImageData.hybridImages[1],
+                    morphoSpecies: "SEi",
+                    geneticSpecies: "TEi x SEi",
+                    difficulty: "hard",
+                    characteristics: {
+                        stalkLength: "mittel",
+                        sinusNerves: 2,
+                        stalkHair: "schwach",
+                        midribHair: "keine",
+                    }
                 }
             ],
             
@@ -438,6 +486,18 @@ eichen-detektiv-game.html
                         sinusNerves: 2,
                         stalkHair: "keine",
                         midribHair: "keine",
+                    }
+                },
+                { 
+                    imagePath: oakImageData.hybridImages[7],
+                    morphoSpecies: "FEi",
+                    geneticSpecies: "TEi x FEi",
+                    difficulty: "expert",
+                    characteristics: {
+                        stalkLength: "lang",
+                        sinusNerves: 5,
+                        stalkHair: "stark",
+                        midribHair: "stark",
                     }
                 }
             ]
@@ -981,9 +1041,24 @@ eichen-detektiv-game.html
             const levelIndex = (gameState.currentLevel - 1) % gameLevels.length;
             const levelData = gameLevels[levelIndex];
             
-            // Choose a random leaf from the level
-            const randomIndex = Math.floor(Math.random() * levelData.length);
-            const currentLeaf = levelData[randomIndex];
+            // Find a M1_M2 image if available - ÄNDERUNG 1
+            let currentLeaf;
+            let hybridFound = false;
+
+            // Priorisiere ein M1_M2-Bild, wenn verfügbar
+            for (const leaf of levelData) {
+                if (leaf.imagePath.startsWith('M1_M2_')) {
+                    currentLeaf = leaf;
+                    hybridFound = true;
+                    break;
+                }
+            }
+
+            // Wenn kein M1_M2-Bild gefunden wurde, verwende ein zufälliges Blatt
+            if (!hybridFound) {
+                const randomIndex = Math.floor(Math.random() * levelData.length);
+                currentLeaf = levelData[randomIndex];
+            }
             
             currentScene = new PIXI.Container();
             app.stage.addChild(currentScene);
@@ -1203,10 +1278,26 @@ eichen-detektiv-game.html
             title.y = app.screen.height * 0.15;
             modalContainer.addChild(title);
             
+            // Bestimme, welches Bild angezeigt werden soll - ÄNDERUNG 2
+            let displayImagePath = leafData.imagePath;
+
+            // Wenn es ein M1_M2-Bild ist, ersetze es durch das entsprechende M4-Bild
+            if (displayImagePath.startsWith('M1_M2_')) {
+                // Extrahiere den Identifikator (z.B. 111_13.jpg aus M1_M2_111_13.jpg)
+                const identifier = displayImagePath.substring(6); // Entferne "M1_M2_"
+                const m4ImagePath = 'M4_' + identifier;
+                
+                // Prüfe, ob dieses M4-Bild existiert
+                if (app.loader.resources[m4ImagePath]) {
+                    displayImagePath = m4ImagePath;
+                    console.log("Zeige M4-Bild anstelle von M1_M2:", displayImagePath);
+                }
+            }
+
             // Display detailed leaf image with the appropriate texture
             const detailedLeaf = new PIXI.Sprite(
-                app.loader.resources[leafData.imagePath] 
-                ? app.loader.resources[leafData.imagePath].texture 
+                app.loader.resources[displayImagePath] 
+                ? app.loader.resources[displayImagePath].texture 
                 : app.loader.resources.oakLeaf.texture // Fallback
             );
             detailedLeaf.anchor.set(0.5);
@@ -1235,7 +1326,7 @@ eichen-detektiv-game.html
             modalContainer.addChild(detailedLeaf);
             
             // Add sample ID information
-            const sampleInfo = leafData.imagePath.replace('.jpg', '');
+            const sampleInfo = displayImagePath.replace('.jpg', '');
             const sampleInfoText = new PIXI.Text(`Probe: ${sampleInfo}`, {
                 fontFamily: 'Arial',
                 fontSize: 14,
@@ -1320,7 +1411,7 @@ eichen-detektiv-game.html
             featureContainer.addChild(annotationText3);
             
             // Image code info
-            const codeInfo = leafData.imagePath.split('_');
+            const codeInfo = displayImagePath.split('_');
             let speciesCode = "";
             
             if (codeInfo[0] === "M1" && codeInfo[1] === "M2") {
