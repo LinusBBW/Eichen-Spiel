@@ -240,48 +240,60 @@ eichen-detektiv-game.html
             }
         };
         
-        // Game levels using real oak leaf images
-        // These are structured based on the provided image filenames
-        // M3 = Stieleiche (SEi), M4 = Traubeneiche (TEi), M5 = Flaumeiche (FEi), M1_M2 = Hybrids
-        
-        // Parse image filenames and create data structure
+        // Aktualisierte oakImageData mit korrekter Kategorisierung
         const oakImageData = {
-            // Hybrids (M1_M2)
-            hybridImages: [
-                "M1_M2_111_13.jpg", "M1_M2_112_05.jpg", "M1_M2_122_12.jpg", 
-                "M1_M2_202_15.jpg", "M1_M2_319_13.jpg", "M1_M2_514_10.jpg", 
-                "M1_M2_514_18.jpg", "M1_M2_521_16.jpg", "M1_M2_601_03.jpg", 
-                "M1_M2_609_17.jpg", "M1_M2_610_10.jpg"
-            ],
-            // Stieleiche (M3)
+            // Stieleiche (SEi) - Bilder der Stieleiche
             stieleicheImages: [
-                "M3_111_13.jpg", "M3_112_05.jpg", "M3_122_12.jpg", 
-                "M3_125_17.jpg", "M3_202_15.jpg", "M3_319_13.jpg", 
-                "M3_512_18.jpg", "M3_514_10.jpg", "M3_521_16.jpg", 
-                "M3_601_03.jpg", "M3_609_17.jpg", "M3_610_10.jpg"
+                "M1_M2_319_13.jpg", "M1_M2_521_16.jpg", 
+                "M3_319_13.jpg", "M3_521_16.jpg", 
+                "M4_319_13.jpg", "M4_521_16.jpg", 
+                "M5_319_13.jpg", "M5_521_16.jpg"
             ],
-            // Traubeneiche (M4)
+            
+            // Traubeneiche (TEi) - Bilder der Traubeneiche
             traubeneicheImages: [
-                "M4_111_13.jpg", "M4_112_05.jpg", "M4_122_12.jpg", 
-                "M4_125_17.jpg", "M4_202_15.jpg", "M4_319_13.jpg", 
-                "M4_512_18.jpg", "M4_514_10.jpg", "M4_521_16.jpg", 
-                "M4_601_03.jpg", "M4_609_17.jpg", "M4_610_10.jpg"
+                "M1_M2_202_15.jpg", "M1_M2_601_03.jpg", "M1_M2_610_10.jpg",
+                "M3_202_15.jpg", "M3_601_03.jpg", "M3_610_10.jpg",
+                "M4_202_15.jpg", "M4_601_03.jpg", "M4_610_10.jpg",
+                "M5_202_15.jpg", "M5_601_03.jpg", "M5_610_10.jpg"
             ],
-            // Flaumeiche (M5)
+            
+            // Flaumeiche (FEi) - Bilder der Flaumeiche
             flaumeicheImages: [
-                "M5_112_05.jpg", "M5_122_12.jpg", "M5_125_17.jpg", 
-                "M5_202_15.jpg", "M5_319_13.jpg", "M5_512_18.jpg", 
-                "M5_514_10.jpg", "M5_521_16.jpg", "M5_601_03.jpg", 
-                "M5_609_17.jpg", "M5_610_10.jpg"
+                "M1_M2_122_12.jpg", "M1_M2_514_10.jpg",
+                "M3_122_12.jpg", "M3_514_10.jpg",
+                "M4_122_12.jpg", "M4_514_10.jpg",
+                "M5_122_12.jpg", "M5_514_10.jpg"
+            ],
+            
+            // Hybridbilder - Bilder von Hybriden zwischen den verschiedenen Eichenarten
+            hybridImages: [
+                // SEi x TEi (Stieleiche × Traubeneiche)
+                "M1_M2_112_05.jpg", "M1_M2_609_17.jpg",
+                "M3_112_05.jpg", "M3_609_17.jpg",
+                "M4_112_05.jpg", "M4_609_17.jpg",
+                "M5_112_05.jpg", "M5_609_17.jpg",
+                
+                // SEi x FEi (Stieleiche × Flaumeiche)
+                "M1_M2_111_13.jpg",
+                "M3_111_13.jpg",
+                "M4_111_13.jpg",
+                "M5_111_13.jpg",
+                
+                // TEi x FEi (Traubeneiche × Flaumeiche)
+                "M1_M2_514_18.jpg", "M1_M2_125_17.jpg",
+                "M3_514_18.jpg", "M3_125_17.jpg",
+                "M4_514_18.jpg", "M4_125_17.jpg",
+                "M5_514_18.jpg", "M5_125_17.jpg"
             ]
         };
         
         // Create game levels with increasing difficulty
         const gameLevels = [
-            // Level 1 - Clear examples of each species (easy to identify)
+            // Level 1 - Klare Beispiele jeder Art (leicht zu identifizieren)
             [
                 { 
-                    imagePath: oakImageData.stieleicheImages[0],
+                    imagePath: "M1_M2_319_13.jpg",  // Stieleiche-Bild
                     morphoSpecies: "SEi",
                     geneticSpecies: "SEi",
                     difficulty: "easy",
@@ -293,19 +305,19 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.traubeneicheImages[0],
+                    imagePath: "M1_M2_202_15.jpg",  // Traubeneiche-Bild
                     morphoSpecies: "TEi",
                     geneticSpecies: "TEi",
                     difficulty: "easy",
                     characteristics: {
                         stalkLength: "lang",
                         sinusNerves: 4,
-                        stalkHair: "keine",
+                        stalkHair: "keine-schwach",
                         midribHair: "schwach",
                     }
                 },
                 { 
-                    imagePath: oakImageData.flaumeicheImages[0],
+                    imagePath: "M1_M2_122_12.jpg",  // Flaumeiche-Bild
                     morphoSpecies: "FEi",
                     geneticSpecies: "FEi",
                     difficulty: "easy",
@@ -317,9 +329,9 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.hybridImages[0],
+                    imagePath: "M1_M2_112_05.jpg",  // Hybrid-Bild (SEi x TEi)
                     morphoSpecies: "UNB",
-                    geneticSpecies: "TEi x SEi",
+                    geneticSpecies: "SEi x TEi",
                     difficulty: "medium",
                     characteristics: {
                         stalkLength: "mittel",
@@ -330,10 +342,10 @@ eichen-detektiv-game.html
                 }
             ],
             
-            // Level 2 - More varied specimens of pure species (medium difficulty)
+            // Level 2 - Verschiedene Exemplare reiner Arten (mittlere Schwierigkeit)
             [
                 { 
-                    imagePath: oakImageData.stieleicheImages[3],
+                    imagePath: "M1_M2_521_16.jpg",  // Stieleiche-Bild
                     morphoSpecies: "SEi",
                     geneticSpecies: "SEi",
                     difficulty: "medium",
@@ -345,7 +357,7 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.traubeneicheImages[5],
+                    imagePath: "M1_M2_601_03.jpg",  // Traubeneiche-Bild
                     morphoSpecies: "TEi",
                     geneticSpecies: "TEi",
                     difficulty: "medium",
@@ -357,7 +369,7 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.flaumeicheImages[4],
+                    imagePath: "M1_M2_514_10.jpg",  // Flaumeiche-Bild
                     morphoSpecies: "FEi",
                     geneticSpecies: "FEi",
                     difficulty: "medium",
@@ -369,7 +381,7 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.hybridImages[2],
+                    imagePath: "M1_M2_514_18.jpg",  // Hybrid-Bild (TEi x FEi)
                     morphoSpecies: "UNB",
                     geneticSpecies: "TEi x FEi",
                     difficulty: "medium",
@@ -382,12 +394,12 @@ eichen-detektiv-game.html
                 }
             ],
             
-            // Level 3 - Simple hybrids (medium-high difficulty)
+            // Level 3 - Einfache Hybriden (mittlere bis hohe Schwierigkeit)
             [
                 { 
-                    imagePath: oakImageData.hybridImages[0],
+                    imagePath: "M1_M2_111_13.jpg",  // Hybrid-Bild (SEi x FEi)
                     morphoSpecies: "UNB",
-                    geneticSpecies: "TEi x SEi",
+                    geneticSpecies: "SEi x FEi",
                     difficulty: "medium",
                     characteristics: {
                         stalkLength: "mittel",
@@ -397,7 +409,7 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.hybridImages[2],
+                    imagePath: "M1_M2_514_18.jpg",  // Hybrid-Bild (TEi x FEi)
                     morphoSpecies: "UNB",
                     geneticSpecies: "TEi x FEi",
                     difficulty: "medium",
@@ -409,7 +421,7 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.hybridImages[5],
+                    imagePath: "M1_M2_125_17.jpg",  // Hybrid-Bild (TEi x FEi)
                     morphoSpecies: "UNB",
                     geneticSpecies: "TEi x FEi",
                     difficulty: "medium",
@@ -422,12 +434,12 @@ eichen-detektiv-game.html
                 }
             ],
             
-            // Level 4 - Deceptive hybrids that look like pure species (high difficulty)
+            // Level 4 - Täuschende Hybriden, die wie reine Arten aussehen (hohe Schwierigkeit)
             [
                 { 
-                    imagePath: oakImageData.hybridImages[4],
+                    imagePath: "M1_M2_609_17.jpg",  // Hybrid-Bild sieht aus wie TEi
                     morphoSpecies: "TEi",
-                    geneticSpecies: "TEi x FEi",
+                    geneticSpecies: "SEi x TEi",
                     difficulty: "hard",
                     characteristics: {
                         stalkLength: "lang",
@@ -437,7 +449,7 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.hybridImages[6],
+                    imagePath: "M1_M2_125_17.jpg",  // Hybrid-Bild sieht aus wie FEi
                     morphoSpecies: "FEi",
                     geneticSpecies: "TEi x FEi",
                     difficulty: "hard",
@@ -449,9 +461,9 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.hybridImages[1],
+                    imagePath: "M1_M2_112_05.jpg",  // Hybrid-Bild sieht aus wie SEi
                     morphoSpecies: "SEi",
-                    geneticSpecies: "TEi x SEi",
+                    geneticSpecies: "SEi x TEi",
                     difficulty: "hard",
                     characteristics: {
                         stalkLength: "mittel",
@@ -462,12 +474,12 @@ eichen-detektiv-game.html
                 }
             ],
             
-            // Level 5 - Advanced cases - challenge round
+            // Level 5 - Fortgeschrittene Fälle - Herausforderungsrunde
             [
                 { 
-                    imagePath: oakImageData.hybridImages[8],
+                    imagePath: "M1_M2_112_05.jpg",  // Schwieriges Hybrid-Bild
                     morphoSpecies: "SEi",
-                    geneticSpecies: "TEi x SEi",
+                    geneticSpecies: "SEi x TEi",
                     difficulty: "expert",
                     characteristics: {
                         stalkLength: "kurz",
@@ -477,7 +489,7 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.stieleicheImages[9],
+                    imagePath: "M1_M2_521_16.jpg",  // Schwierige Stieleiche
                     morphoSpecies: "UNB",
                     geneticSpecies: "SEi",
                     difficulty: "expert",
@@ -489,7 +501,7 @@ eichen-detektiv-game.html
                     }
                 },
                 { 
-                    imagePath: oakImageData.hybridImages[7],
+                    imagePath: "M1_M2_514_18.jpg",  // Schwieriges Hybrid-Bild
                     morphoSpecies: "FEi",
                     geneticSpecies: "TEi x FEi",
                     difficulty: "expert",
@@ -1041,21 +1053,24 @@ eichen-detektiv-game.html
             const levelIndex = (gameState.currentLevel - 1) % gameLevels.length;
             const levelData = gameLevels[levelIndex];
             
-            // Find a M1_M2 image if available - ÄNDERUNG 1
+            // ÄNDERUNG 1 - Verbesserte Version zur Auswahl von Blättern
+            // Bevorzuge M1_M2-Bilder (Hybride)
             let currentLeaf;
-            let hybridFound = false;
+            let hybridCandidates = [];
 
-            // Priorisiere ein M1_M2-Bild, wenn verfügbar
+            // Sammle alle M1_M2-Bilder zur Auswahl
             for (const leaf of levelData) {
                 if (leaf.imagePath.startsWith('M1_M2_')) {
-                    currentLeaf = leaf;
-                    hybridFound = true;
-                    break;
+                    hybridCandidates.push(leaf);
                 }
             }
 
-            // Wenn kein M1_M2-Bild gefunden wurde, verwende ein zufälliges Blatt
-            if (!hybridFound) {
+            // Wenn M1_M2-Bilder gefunden wurden, wähle eines zufällig aus
+            if (hybridCandidates.length > 0) {
+                const randomIndex = Math.floor(Math.random() * hybridCandidates.length);
+                currentLeaf = hybridCandidates[randomIndex];
+            } else {
+                // Ansonsten wähle ein zufälliges Blatt
                 const randomIndex = Math.floor(Math.random() * levelData.length);
                 currentLeaf = levelData[randomIndex];
             }
@@ -1278,19 +1293,28 @@ eichen-detektiv-game.html
             title.y = app.screen.height * 0.15;
             modalContainer.addChild(title);
             
-            // Bestimme, welches Bild angezeigt werden soll - ÄNDERUNG 2
+            // ÄNDERUNG 2 - Verbesserte Version für die Detailansicht
             let displayImagePath = leafData.imagePath;
 
-            // Wenn es ein M1_M2-Bild ist, ersetze es durch das entsprechende M4-Bild
+            // Wenn es ein M1_M2-Bild ist, versuche die verschiedenen Merkmalsvarianten zu nutzen
             if (displayImagePath.startsWith('M1_M2_')) {
                 // Extrahiere den Identifikator (z.B. 111_13.jpg aus M1_M2_111_13.jpg)
                 const identifier = displayImagePath.substring(6); // Entferne "M1_M2_"
-                const m4ImagePath = 'M4_' + identifier;
                 
-                // Prüfe, ob dieses M4-Bild existiert
-                if (app.loader.resources[m4ImagePath]) {
-                    displayImagePath = m4ImagePath;
-                    console.log("Zeige M4-Bild anstelle von M1_M2:", displayImagePath);
+                // Prüfe verschiedene Merkmalsvarianten in dieser Reihenfolge (Priorität)
+                const alternativeVersions = [
+                    'M4_' + identifier, // Behaarung des Mittelnervs (wichtiges Merkmal)
+                    'M3_' + identifier, // Behaarung des Blattstiels 
+                    'M5_' + identifier  // Haartyp
+                ];
+                
+                // Verwende die erste verfügbare Alternative
+                for (const altVersion of alternativeVersions) {
+                    if (app.loader.resources[altVersion]) {
+                        displayImagePath = altVersion;
+                        console.log(`Zeige Detail-Bild ${displayImagePath} anstelle von ${leafData.imagePath}`);
+                        break;
+                    }
                 }
             }
 
@@ -1415,13 +1439,13 @@ eichen-detektiv-game.html
             let speciesCode = "";
             
             if (codeInfo[0] === "M1" && codeInfo[1] === "M2") {
-                speciesCode = "M1_M2 = Hybrid";
+                speciesCode = "M1_M2 = Merkmal 1 & 2 (Blattstiel & Buchtennerven)";
             } else if (codeInfo[0] === "M3") {
-                speciesCode = "M3 = Stieleiche (SEi)";
+                speciesCode = "M3 = Merkmal 3 (Behaarung des Blattstiels)";
             } else if (codeInfo[0] === "M4") {
-                speciesCode = "M4 = Traubeneiche (TEi)";
+                speciesCode = "M4 = Merkmal 4 (Behaarung des Mittelnervs)";
             } else if (codeInfo[0] === "M5") {
-                speciesCode = "M5 = Flaumeiche (FEi)";
+                speciesCode = "M5 = Merkmal 5 (Haartyp)";
             }
             
             const codeInfoText = new PIXI.Text(speciesCode, {
